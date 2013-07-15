@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.logging.Logger;
 
 /**
  * <p>This is a utility to control the creation of instances across the local system.
@@ -33,33 +34,30 @@ import java.net.Socket;
  * </p>
  * 
  * @author NEGU Soft
+ * @author otros.systems@gmail.com
  *
  */
 public class SingleInstance {
-	
-	public static final int DEFAULT_PORT = 3273;
+	private static final Logger LOGGER = Logger.getLogger(SingleInstance.class.getName());
 	private static final long DROP_TIMEOUT = 500;
 	
 	private int port;
 	private ServerSocket serverSocket;
 	private ResponseDelegate response;
 	private Thread thread;
+	private SocketUtil socketUtil;
 	
-	private SingleInstance() {
-		this(DEFAULT_PORT, null);
-	}
-	
-	private SingleInstance(int port) {
-		this(port, null);
-	}
-	
-	private SingleInstance(int port, ResponseDelegate response) {
+
+	private SingleInstance(String appName, int port, ResponseDelegate response, SocketUtil socketUtil) {
 		this.port = port;
 		this.response = response;
+		this.socketUtil = socketUtil;
+		LOGGER.finest("Creating single instance for app " + appName);
 	}
 	
 	private void establishInstance() throws IOException {
 		this.serverSocket = new ServerSocket(this.port);
+		socketUtil.markSocketAsBusy(port);
 
 		this.thread = new Thread(new Runnable() {
 			@Override public void run() {
@@ -84,99 +82,58 @@ public class SingleInstance {
 	 * Free the instance son that a new instance can be established
 	 */
 	public void dropInstance() {
-		if (this.serverSocket == null)
-			return;
+		LOGGER.fine("Droping instance");
+		if (this.serverSocket == null){
+			LOGGER.fine("No server socket was open, returning");
+			return;			
+		}
 		
 		//close the ServerSocket
-		try {
-			this.serverSocket.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		LOGGER.fine("Closing socket");
+		socketUtil.closeSocketAndRemoveMarkerFile(serverSocket);
 		
-		//wait fot the thread to finish
+		
+		//wait for the thread to finish
 		try {
+			LOGGER.fine("Waitin for socket thread to close");
 			this.thread.join(DROP_TIMEOUT);
+			LOGGER.fine("Socket thread finished");
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			LOGGER.warning("Waitin for socket thread intterruped");
 		}
 	}
 	
-	/**
-	 * Get the port where the instance is established
-	 * @return port number
-	 */
-	public int getPort() {
-		return this.port;
-	}
-	
-	/**
-	 * Request an instance representation using the default port
-	 * @return an instance representation or NULL if there is one already one running
-	 */
-	public static SingleInstance request() {
-		return request(DEFAULT_PORT, null, null);
-	}
+
 	
 	/**
 	 * Request an instance representation
-	 * @param port the port where the instance will be established
-	 * @return an instance representation or NULL if there is one already one running
-	 */	
-	public static SingleInstance request(int port) {
-		return request(port, null, null);
-	}
-	
-	/**
-	 * Request an instance representation using the default port
+	 * @param appName name of application. Will be used to create file with port information
 	 * @param request action to be performed if there is already an instance running
 	 * @param response action to perform when new instances are requested while this one is running
 	 * @return an instance representation or NULL if there is one already one running
 	 */
-	public static SingleInstance request(RequestDelegate request, ResponseDelegate response) {
-		return request(DEFAULT_PORT, request, response);
-	}
-	
-	/**
-	 * Request an instance representation
-	 * @param port the port where the instance will be established
-	 * @param request action to be performed if there is already an instance running
-	 * @param response action to perform when new instances are requested while this one is running
-	 * @return an instance representation or NULL if there is one already one running
-	 */
-	public static SingleInstance request(int port, RequestDelegate request, ResponseDelegate response) {
+	public static SingleInstance request(String appName, RequestDelegate request, ResponseDelegate response) {
 		//Try to establish the instance
-		SingleInstance result = new SingleInstance(port, response);
+		SocketUtil socketUtil = new SocketUtil(appName);
+		SingleInstance result = new SingleInstance(appName,socketUtil.getPortToUse(), response, socketUtil);
 		try {
 			result.establishInstance();
 			return result;
 		} catch (IOException e) {
+			LOGGER.fine("Can't estabilish new instance, one is already running");
 		}
 		
 		//If failed connect to the current instance and notify
 		try {
-			Socket socket = new Socket(InetAddress.getLocalHost(), port);
-			if (request != null)
+			LOGGER.fine("Connecting to existing instance");
+			Socket socket = new Socket(InetAddress.getLocalHost(), socketUtil.getPortToUse());
+			if (request != null){
 				request.requestAction(socket);
+			}
 		} catch (Exception e) {
+			LOGGER.warning("Can't connect to existing instance");
 		}
 		
 		return null;
-	}
-	
-	/**
-	 * Request to be performed to the currently running instance
-	 * @author NEGU Soft
-	 */
-	public static interface RequestDelegate {
-		public void requestAction(Socket socket);
-	}
-	
-	/**
-	 * Response for the new instance attempts
-	 * @author NEGU Soft
-	 */
-	public static interface ResponseDelegate {
-		public void responseAction(Socket socket);
 	}
 }
