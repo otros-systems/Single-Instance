@@ -84,7 +84,7 @@ public class ParameterPassing {
 			System.out.println("There is no instance currently running so we can go ahead:");
 			System.out.println("Doing some cool stuff, press ENTER key to stop...");
 			try {
-        System.in.read()
+        System.in.read();
       } catch (IOException e) {
 				e.printStackTrace();
 			}
