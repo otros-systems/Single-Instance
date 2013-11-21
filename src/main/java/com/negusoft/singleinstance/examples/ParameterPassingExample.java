@@ -32,22 +32,22 @@ public class ParameterPassingExample {
 	
 	private static final String DEFAULT_PARAMETER = "HELLO WORLD!";
 	
-	private static String parameter;
-
 	public static void main(String[] args) {
 		RequestDelegate request;
-		if (args.length > 0){
-			StringBuilder sb = new StringBuilder();
-			for (String string : args) {
-				sb.append(string).append(", " );
-			}
-			parameter = sb.toString();
-		}
-		else{
-			parameter = DEFAULT_PARAMETER;
-		}
+
 		request = new RequestDelegate() {
-			@Override public void requestAction(Socket socket) {
+			@Override public void requestAction(Socket socket, String... params) {
+        String parameter;
+        if (params.length > 0){
+          StringBuilder sb = new StringBuilder();
+          for (String string : params) {
+            sb.append(string).append(", " );
+          }
+          parameter = sb.toString();
+        }
+        else{
+          parameter = DEFAULT_PARAMETER;
+        }
 				try {
 					BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 					writer.write(parameter);
@@ -73,7 +73,7 @@ public class ParameterPassingExample {
 				}
 			}};
 		
-		SingleInstance instance = SingleInstance.request("ParameterDemo",request, response);
+		SingleInstance instance = SingleInstance.request("ParameterDemo",request, response,args);
 		if (instance == null)
 		{
 			System.out.println("There is already an instance running so we close.");

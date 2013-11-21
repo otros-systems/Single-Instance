@@ -114,7 +114,7 @@ public class SingleInstance {
 	 * @param response action to perform when new instances are requested while this one is running
 	 * @return an instance representation or NULL if there is one already one running
 	 */
-	public static SingleInstance request(String appName, RequestDelegate request, ResponseDelegate response) {
+	public static SingleInstance request(String appName, RequestDelegate request, ResponseDelegate response, String... params) {
 		//Try to establish the instance
 		SocketUtil socketUtil = new SocketUtil(appName);
 		SingleInstance result = new SingleInstance(appName,socketUtil.getPortToUse(), response, socketUtil);
@@ -130,7 +130,7 @@ public class SingleInstance {
 			LOGGER.fine("Connecting to existing instance");
 			Socket socket = new Socket(InetAddress.getLocalHost(), socketUtil.getPortToUse());
 			if (request != null){
-				request.requestAction(socket);
+				request.requestAction(socket,params);
 			}
 		} catch (Exception e) {
 			LOGGER.warning("Can't connect to existing instance");

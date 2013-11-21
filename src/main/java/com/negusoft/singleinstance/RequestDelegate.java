@@ -23,5 +23,5 @@ import java.net.Socket;
  * @author NEGU Soft
  */
 public interface RequestDelegate {
-	public void requestAction(Socket socket);
+	public void requestAction(Socket socket, String... args);
 }
