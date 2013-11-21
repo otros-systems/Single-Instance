@@ -28,7 +28,7 @@ import java.net.Socket;
  * @author otros.systems@gmail.com
  *
  */
-public class ParameterPassing {
+public class ParameterPassingExample {
 	
 	private static final String DEFAULT_PARAMETER = "HELLO WORLD!";
 	
