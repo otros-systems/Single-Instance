@@ -19,6 +19,7 @@ package com.negusoft.singleinstance;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,7 +40,7 @@ class SocketUtil {
       loopbackAddress = InetAddress.getByName("127.0.0.1");
     } catch (UnknownHostException e) {
       //this is not going to happened
-      throw new RuntimeException("Can't find local \"127.0.0.1\" address ",e);
+      throw new RuntimeException("Can't find local \"127.0.0.1\" address ", e);
     }
   }
 
@@ -55,7 +56,7 @@ class SocketUtil {
         readFromFile = fileUtil.readFromFile();
         LOGGER.log(Level.INFO, "Port read from file is {0}", readFromFile);
         portFromFile = Integer.parseInt(readFromFile);
-        socketAlive = isSocketAlive(portFromFile);
+        socketAlive = isSocketBusy(portFromFile);
         LOGGER.log(Level.INFO, "Socket {0} is alive: {1}", new Object[]{portFromFile, socketAlive});
       } catch (IOException e) {
         //ignore it
@@ -111,8 +112,8 @@ class SocketUtil {
     return -1;
   }
 
-  boolean isSocketAlive(int port) {
-    LOGGER.entering(SocketUtil.class.getName(), "isSocketAlive", port);
+  boolean isSocketBusy(int port) {
+    LOGGER.entering(SocketUtil.class.getName(), "isSocketBusy", port);
     boolean result = true;
     try {
       ServerSocket socket = new ServerSocket(port, 1, loopbackAddress);
@@ -120,10 +121,21 @@ class SocketUtil {
       socket.close();
     } catch (Exception e) {
       // socket is dead
-      e.printStackTrace();
+      LOGGER.log(Level.INFO, "Socket is busy");
+
     }
-    LOGGER.exiting(SocketUtil.class.getName(), "isSocketAlive", result);
+    LOGGER.exiting(SocketUtil.class.getName(), "isSocketBusy", result);
     return result;
   }
 
+  public ServerSocket openLocalServerSocket(int port) throws IOException {
+    ServerSocket serverSocket = new ServerSocket(port, 3, loopbackAddress);
+    return serverSocket;
+  }
+
+  public Socket openLocalClientSocket(int portToUse) throws IOException {
+    Socket socket = new Socket(loopbackAddress, portToUse);
+    return socket;
+
+  }
 }

@@ -58,7 +58,8 @@ public class SingleInstance {
 	}
 	
 	private void establishInstance() throws IOException {
-		this.serverSocket = new ServerSocket(this.port);
+		this.serverSocket = socketUtil.openLocalServerSocket(port);
+
 		socketUtil.markSocketAsBusy(port);
 
 		this.thread = new Thread(new Runnable() {
@@ -128,7 +129,7 @@ public class SingleInstance {
 		//If failed connect to the current instance and notify
 		try {
 			LOGGER.fine("Connecting to existing instance");
-			Socket socket = new Socket(InetAddress.getLocalHost(), socketUtil.getPortToUse());
+			Socket socket = socketUtil.openLocalClientSocket(socketUtil.getPortToUse());
 			if (request != null){
 				request.requestAction(socket,params);
 			}

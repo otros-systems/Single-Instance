@@ -109,7 +109,7 @@ public class ParameterPassingExample {
       socketHandler.setLevel(Level.ALL);
       logger.addHandler(socketHandler);
     } catch (IOException e) {
-      e.printStackTrace();
+      //cant open socket
     }
 
   }
