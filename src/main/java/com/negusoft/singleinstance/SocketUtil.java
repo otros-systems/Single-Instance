@@ -19,6 +19,7 @@ package com.negusoft.singleinstance;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,7 +35,12 @@ class SocketUtil {
   SocketUtil(String appName) {
     super();
     this.fileUtil = new FileUtil(appName);
-    loopbackAddress = InetAddress.getLoopbackAddress();
+    try {
+      loopbackAddress = InetAddress.getByName("127.0.0.1");
+    } catch (UnknownHostException e) {
+      //this is not going to happened
+      throw new RuntimeException("Can't find local \"127.0.0.1\" address ",e);
+    }
   }
 
   int getPortToUse() {
