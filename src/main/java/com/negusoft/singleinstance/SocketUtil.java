@@ -19,85 +19,105 @@ package com.negusoft.singleinstance;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- *  @author otros.systems@gmail.com
- *
+ * @author otros.systems@gmail.com
  */
 class SocketUtil {
 
-	private FileUtil fileUtil;
+  private static final Logger LOGGER = Logger.getLogger(SocketUtil.class.getName());
+  private final InetAddress loopbackAddress;
+  private FileUtil fileUtil;
 
-	SocketUtil(String appName) {
-		super();
-		this.fileUtil = new FileUtil(appName);
-	}
+  SocketUtil(String appName) {
+    super();
+    this.fileUtil = new FileUtil(appName);
+    loopbackAddress = InetAddress.getLoopbackAddress();
+  }
 
-	int getPortToUse() {
-		String readFromFile;
-		int portFromFile = -1;
-		boolean socketAlive = false;
-		if (fileUtil.fileExist()) {
+  int getPortToUse() {
+    LOGGER.entering(SocketUtil.class.getName(), "getPortToUse");
 
-			try {
-				readFromFile = fileUtil.readFromFile();
-				portFromFile = Integer.parseInt(readFromFile);
-				socketAlive = isSocketAlive(portFromFile);
-			} catch (IOException e) {
+    String readFromFile;
+    int portFromFile = -1;
+    boolean socketAlive = false;
+    if (fileUtil.fileExist()) {
+      LOGGER.log(Level.INFO, "Definition file exist");
+      try {
+        readFromFile = fileUtil.readFromFile();
+        LOGGER.log(Level.INFO, "Port read from file is {0}", readFromFile);
+        portFromFile = Integer.parseInt(readFromFile);
+        socketAlive = isSocketAlive(portFromFile);
+        LOGGER.log(Level.INFO, "Socket {0} is alive: {1}", new Object[]{portFromFile, socketAlive});
+      } catch (IOException e) {
         //ignore it
-			}
-		}
-		if (socketAlive) {
-			return portFromFile;
-		} else {
-      return getRandomSocket();
-		}
-	}
+      }
+    }
+    if (socketAlive) {
+      LOGGER.exiting(SocketUtil.class.getName(), "getPortToUse", socketAlive);
+      return portFromFile;
+    } else {
+      int randomSocket = getRandomSocket();
+      LOGGER.exiting(SocketUtil.class.getName(), "getPortToUse", randomSocket);
+      return randomSocket;
+    }
+  }
 
-	void markSocketAsBusy(int port) {
-		try {
-			fileUtil.writeToFile(Integer.toString(port));
-		} catch (IOException e) {
-		  //ignore it
-		}
-	}
+  void markSocketAsBusy(int port) {
+    LOGGER.entering(SocketUtil.class.getName(), "markSocketAsBusy", port);
+    try {
+      fileUtil.writeToFile(Integer.toString(port));
+    } catch (IOException e) {
+      //ignore it
+      LOGGER.log(Level.INFO, "Can't write busy socket into file", e);
+    }
+    LOGGER.exiting(SocketUtil.class.getName(), "markSocketAsBusy");
+  }
 
-	void closeSocketAndRemoveMarkerFile(ServerSocket serverSocket) {
-		try {
-			serverSocket.close();
-		} catch (IOException e) {
-			//ignore it
-		}
-		fileUtil.getFile().deleteOnExit();
+  void closeSocketAndRemoveMarkerFile(ServerSocket serverSocket) {
+    LOGGER.entering(SocketUtil.class.getName(), "closeSocketAndRemoveMarkerFile");
+    try {
+      serverSocket.close();
+    } catch (IOException e) {
+      //ignore it
+    }
+    fileUtil.getFile().deleteOnExit();
+    LOGGER.exiting(SocketUtil.class.getName(), "closeSocketAndRemoveMarkerFile");
 
-	}
+  }
 
-	int getRandomSocket() {
+  int getRandomSocket() {
+    LOGGER.entering(SocketUtil.class.getName(), "getRandomSocket");
+    for (int i = 10000; i < 20000; i++) {
+      try {
+        ServerSocket serverSocket = new ServerSocket(i, 1,
+            loopbackAddress);
+        serverSocket.close();
+        LOGGER.exiting(SocketUtil.class.getName(), "getRandomSocket", i);
+        return i;
+      } catch (Exception e) {
+        // socket busy
+      }
+    }
+    LOGGER.exiting(SocketUtil.class.getName(), "getRandomSocket", -1);
+    return -1;
+  }
 
-		for (int i = 10000; i < 20000; i++) {
-			try {
-				ServerSocket serverSocket = new ServerSocket(i, 1,
-						InetAddress.getLocalHost());
-				serverSocket.close();
-				return i;
-			} catch (Exception e) {
-				// socket busy
-			}
-		}
-		return -1;
-	}
-
-	boolean isSocketAlive(int port) {
-
-		try {
-			ServerSocket socket = new ServerSocket(port, 1,
-					InetAddress.getLocalHost());
-			socket.close();
-			return true;
-		} catch (Exception e) {
-			// socket is dead
-		}
-		return false;
-	}
+  boolean isSocketAlive(int port) {
+    LOGGER.entering(SocketUtil.class.getName(), "isSocketAlive", port);
+    boolean result = true;
+    try {
+      ServerSocket socket = new ServerSocket(port, 1, loopbackAddress);
+      result = false;
+      socket.close();
+    } catch (Exception e) {
+      // socket is dead
+      e.printStackTrace();
+    }
+    LOGGER.exiting(SocketUtil.class.getName(), "isSocketAlive", result);
+    return result;
+  }
 
 }

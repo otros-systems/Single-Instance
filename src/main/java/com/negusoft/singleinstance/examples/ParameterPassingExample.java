@@ -22,6 +22,10 @@ import com.negusoft.singleinstance.SingleInstance;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SocketHandler;
+import java.util.logging.XMLFormatter;
 
 /**
  * @author NEGU Soft
@@ -33,6 +37,7 @@ public class ParameterPassingExample {
 	private static final String DEFAULT_PARAMETER = "HELLO WORLD!";
 	
 	public static void main(String[] args) {
+    initSocketLogger();
 		RequestDelegate request;
 
 		request = new RequestDelegate() {
@@ -92,5 +97,21 @@ public class ParameterPassingExample {
 			System.out.println("Finished, now another instance can run.");
 		}
 	}
+
+  private static void initSocketLogger() {
+    Logger logger = Logger.getLogger("com.negusoft.singleinstance");
+    try {
+      SocketHandler socketHandler
+           = new SocketHandler("localhost",1900);
+      logger.setLevel(Level.ALL);
+      XMLFormatter xmlFormatter = new XMLFormatter();
+      socketHandler.setFormatter(xmlFormatter);
+      socketHandler.setLevel(Level.ALL);
+      logger.addHandler(socketHandler);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+  }
 
 }

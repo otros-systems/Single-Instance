@@ -18,47 +18,58 @@ package com.negusoft.singleinstance;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author otros.systems@gmail.com
- *
  */
 public class FileUtil {
+  private static final Logger LOGGER = Logger.getLogger(FileUtil.class.getName());
+  private static final Charset CHARSET = Charset.forName("UTF-8");
+  private File file;
 
-	private static final Charset CHARSET = Charset.forName("UTF-8");
-	private File file;
+  FileUtil(String appName) {
+    super();
+    // add user name if many instance are running on one machine
+    this.file = new File(System.getProperty("java.io.tmpdir"), appName
+        + "-" + System.getProperty("user.name"));
+    LOGGER.log(Level.INFO,"File name is {0}", file.getAbsolutePath());
+  }
 
-	FileUtil(String appName) {
-		super();
-		// add user name if many instance are running on one machine
-		this.file = new File(System.getProperty("java.io.tmpdir"), appName
-				+ "-" + System.getProperty("user.name"));
-	}
+  boolean fileExist() {
+    LOGGER.entering(FileUtil.class.getName(), "fileExist");
+    boolean exists = file.exists();
+    LOGGER.exiting(FileUtil.class.getName(), "fileExist", exists);
+    return exists;
+  }
 
-	boolean fileExist() {
-		return file.exists();
-	}
+  void writeToFile(String string) throws IOException {
+    LOGGER.entering(FileUtil.class.getName(),"writeToFile",string);
+    FileOutputStream fout = new FileOutputStream(file);
+    fout.write(string.getBytes(CHARSET));
+    fout.close();
+    LOGGER.exiting(FileUtil.class.getName(),"writeToFile");
+  }
 
-	void writeToFile(String string) throws IOException {
-		FileOutputStream fout = new FileOutputStream(file);
-		fout.write(string.getBytes(CHARSET));
-		fout.close();
-	}
+  String readFromFile() throws IOException {
+    LOGGER.entering(FileUtil.class.getName(),"readFromFile");
+    LOGGER.log(Level.INFO,"Reading from files {0}",file.getName());
+    FileInputStream fin = new FileInputStream(file);
+    byte[] buff = new byte[128];
+    int read;
+    ByteArrayOutputStream bout = new ByteArrayOutputStream();
+    while ((read = fin.read(buff)) > 0) {
+      bout.write(buff, 0, read);
+    }
+    fin.close();
+    String fileContent = new String(bout.toByteArray(), CHARSET);
+    LOGGER.exiting(FileUtil.class.getName(),"readFromFile",fileContent);
+    return fileContent;
+  }
 
-	String readFromFile() throws IOException {
-		FileInputStream fin = new FileInputStream(file);
-		byte[] buff = new byte[128];
-		int read ;
-		ByteArrayOutputStream bout = new ByteArrayOutputStream();
-		while ((read = fin.read(buff)) > 0) {
-			bout.write(buff, 0, read);
-		}
-		fin.close();
-    return new String(bout.toByteArray(), CHARSET);
-	}
-
-	File getFile() {
-		return file;
-	}
+  File getFile() {
+    return file;
+  }
 
 }

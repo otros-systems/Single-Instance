@@ -84,7 +84,7 @@ public class SingleInstance {
 	 * Free the instance son that a new instance can be established
 	 */
 	public void dropInstance() {
-		LOGGER.fine("Droping instance");
+		LOGGER.fine("Dropping instance");
 		if (this.serverSocket == null){
 			LOGGER.fine("No server socket was open, returning");
 			return;			
@@ -97,11 +97,11 @@ public class SingleInstance {
 		
 		//wait for the thread to finish
 		try {
-			LOGGER.fine("Waitin for socket thread to close");
+			LOGGER.fine("Waiting for socket thread to close");
 			this.thread.join(DROP_TIMEOUT);
 			LOGGER.fine("Socket thread finished");
 		} catch (InterruptedException e) {
-			LOGGER.warning("Waitin for socket thread intterruped");
+			LOGGER.warning("Waiting for socket thread interrupted");
 		}
 	}
 	
@@ -122,7 +122,7 @@ public class SingleInstance {
 			result.establishInstance();
 			return result;
 		} catch (IOException e) {
-			LOGGER.fine("Can't estabilish new instance, one is already running");
+			LOGGER.fine("Can't establish new instance, one is already running");
 		}
 		
 		//If failed connect to the current instance and notify
