@@ -78,6 +78,7 @@ public class SingleInstance {
 				//Set variables to null before exiting
 				serverSocket = null;
 			}});
+    thread.setDaemon(true);
 		this.thread.start();
 	}
 	
