@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 class SocketUtil {
 
   private static final Logger LOGGER = Logger.getLogger(SocketUtil.class.getName());
+  public static final String SYS_PROPERTY = "singleInstance.startPort";
   private final InetAddress loopbackAddress;
   private FileUtil fileUtil;
 
@@ -96,8 +97,16 @@ class SocketUtil {
   }
 
   int getRandomSocket() {
+    int port = 10000;
+    final String property = System.getProperty(SYS_PROPERTY, "10000");
+    try {
+      port = Integer.parseInt(property);
+    } catch (Exception e){
+      LOGGER.severe(String.format("Can't parse %s value \"%s\", error: %s", SYS_PROPERTY, property, e.getMessage()));
+    }
     LOGGER.entering(SocketUtil.class.getName(), "getRandomSocket");
-    for (int i = 10000; i < 20000; i++) {
+    final int portMaxValue = Math.min(port + 10000, 65535);
+    for (int i = port; i < portMaxValue; i++) {
       try {
         ServerSocket serverSocket = new ServerSocket(i, 1,
             loopbackAddress);
