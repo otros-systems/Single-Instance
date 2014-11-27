@@ -100,7 +100,7 @@ class SocketUtil {
 
   int getRandomSocket() {
     int port = 10001;
-    final String property = System.getProperty(SYS_PROPERTY, "10000");
+    final String property = System.getProperty(SYS_PROPERTY, Integer.toString(port));
     try {
       port = Integer.parseInt(property);
     } catch (Exception e) {
