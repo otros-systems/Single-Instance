@@ -64,7 +64,7 @@ class SocketUtil {
       }
     }
     if (socketAlive) {
-      LOGGER.exiting(SocketUtil.class.getName(), "getPortToUse", socketAlive);
+      LOGGER.exiting(SocketUtil.class.getName(), "getPortToUse", true);
       return portFromFile;
     } else {
       int randomSocket = getRandomSocket();
@@ -77,6 +77,7 @@ class SocketUtil {
     LOGGER.entering(SocketUtil.class.getName(), "markSocketAsBusy", port);
     try {
       fileUtil.writeToFile(Integer.toString(port));
+      fileUtil.getFile().deleteOnExit();
     } catch (IOException e) {
       //ignore it
       LOGGER.log(Level.INFO, "Can't write busy socket into file", e);
@@ -91,7 +92,8 @@ class SocketUtil {
     } catch (IOException e) {
       //ignore it
     }
-    fileUtil.getFile().deleteOnExit();
+    final boolean delete = fileUtil.getFile().delete();
+    LOGGER.fine("File " + fileUtil.getFile().getAbsolutePath() + " was deleted: " + delete);
     LOGGER.exiting(SocketUtil.class.getName(), "closeSocketAndRemoveMarkerFile");
 
   }
@@ -101,7 +103,7 @@ class SocketUtil {
     final String property = System.getProperty(SYS_PROPERTY, "10000");
     try {
       port = Integer.parseInt(property);
-    } catch (Exception e){
+    } catch (Exception e) {
       LOGGER.severe(String.format("Can't parse %s value \"%s\", error: %s", SYS_PROPERTY, property, e.getMessage()));
     }
     LOGGER.entering(SocketUtil.class.getName(), "getRandomSocket");
@@ -138,13 +140,11 @@ class SocketUtil {
   }
 
   public ServerSocket openLocalServerSocket(int port) throws IOException {
-    ServerSocket serverSocket = new ServerSocket(port, 3, loopbackAddress);
-    return serverSocket;
+    return new ServerSocket(port, 3, loopbackAddress);
   }
 
   public Socket openLocalClientSocket(int portToUse) throws IOException {
-    Socket socket = new Socket(loopbackAddress, portToUse);
-    return socket;
+    return new Socket(loopbackAddress, portToUse);
 
   }
 }
